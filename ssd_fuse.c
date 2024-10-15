@@ -180,14 +180,39 @@ static int ftl_write(const char* buf, size_t logic_block_address_range, size_t l
     PCA PCA;
     PCA.value = get_next_PCA();
 
-    if (nand_write(buf, PCA.value)) {
-        L2P_address_table[logical_block_address] = PCA.value;
-        return 512;
+    if(PCA.value == PCA_INVALID){
+        printf("Error: No avaliable PCA for LBA %zu, failed to write!\n", logic_block_address_range);
+        // Return error if no PCA is avaliable
+        return -ENOSPC;
     }
 
-    printf(" --> Write fail !!!");
+    // Check if the data is aligned to 512B
+    if(logic_block_address_range % 512 != 0){
+        // Handle non-aligned data with RMW
+        ftl_read(buf_temp, logic_block_address_range);
 
-    return -EINVAL;
+        // Modify
+        memcpy(buf_temp + (logic_block_address_range % 512), buf, logic_block_address_range);
+
+        // Write
+        if(!nand_write(buf_temp, PCA.value)){
+            printf("Error: Write operatino failed during RMW at PCA %u\n", PCA.value);
+            return -EIO;
+        }
+    }
+    else{
+        // Handle aligned data, write the buffer directly to NAND
+        if(!nand_write(buf, PCA.value)){
+            printf("Error: Write operation failed at PCA %u\n", PCA.value);
+            return -EIO;
+        }
+    }
+
+    // Update the L2P table to reflect te new mapping
+    L2P_address_table[logic_block_address_range] = PCA.value;
+    
+    // Return the number of bytes written
+    return 512;
 }
 
 static int ssd_file_type(const char* file_path) {
