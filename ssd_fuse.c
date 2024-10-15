@@ -232,6 +232,8 @@ static int ssd_open(const char* file_path, struct fuse_file_info* fi) {
 
 static int ssd_do_read(char* buf, size_t size, off_t offset) {
     /* TODO: call ftl_read function and handle result */
+    // [v] Done
+    // [] Test
     int logical_block_address_temp = offset / 512;
     int logical_block_address_temp_range = (offset + size - 1) / 512 - (logical_block_address_temp) + 1;
     int result;
