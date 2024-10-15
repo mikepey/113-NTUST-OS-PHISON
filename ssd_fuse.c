@@ -177,6 +177,8 @@ static int ftl_read(char* buf, size_t logical_block_address) {
 
 static int ftl_write(const char* buf, size_t logic_block_address_range, size_t logical_block_address) {
     /* TODO: only basic write case, need to consider other cases */
+    // [v] Done
+    // []  Test
     PCA PCA;
     PCA.value = get_next_PCA();
 
