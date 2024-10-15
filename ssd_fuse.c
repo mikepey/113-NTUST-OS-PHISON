@@ -242,13 +242,17 @@ static int ssd_do_read(char* buf, size_t size, off_t offset) {
     if ((offset) >= logic_size) return 0;
     if (size > logic_size - offset) size = logic_size - offset;
 
-    logical_block_address_temp = offset / 512;
-    logical_block_address_temp_range = (offset + size - 1) / 512 - (logical_block_address_temp) + 1;
-
     buf_temp = calloc(logical_block_address_temp_range * 512, sizeof(char));
 
     for (int i = 0; i < logical_block_address_temp_range; i++) {
         // TODO
+        result = ftl_read(buf_temp + i * 512, logical_block_address_temp++);
+        if (result < 0) {
+            free(buf_temp);
+            return result;
+        } else if (result == 0) {
+            memset(buf_temp + i * 512, 0, 512);
+        }
     }
 
     memcpy(buf, buf_temp + offset % 512, size);
