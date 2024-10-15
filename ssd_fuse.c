@@ -8,14 +8,14 @@
 
 #define FUSE_USE_VERSION 35
 
-#include <fuse.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
 #include <errno.h>
+#include <fuse.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "ssd_fuse_header.h"
 
@@ -30,7 +30,7 @@ unsigned int* L2P_address_table;
 
 static int ssd_resize(size_t new_size) {
     if (new_size > NAND_LOGICAL_COUNT * NAND_BYTE_SIZE) return -ENOMEM;
-    
+
     logic_size = new_size;
 
     return 0;
@@ -78,7 +78,7 @@ static int nand_write(const char* buf, int write_PCA) {
         return -EINVAL;
     }
 
-    fseek(fptr, PCA.info.page_number * 512, SEEK_SET );
+    fseek(fptr, PCA.info.page_number * 512, SEEK_SET);
     fwrite(buf, 1, 512, fptr);
     fclose(fptr);
 
@@ -90,7 +90,7 @@ static int nand_write(const char* buf, int write_PCA) {
 
 static int nand_erase(int block_number) {
     FILE* fptr;
-	// int found = 0; WTF is this?
+    // int found = 0; WTF is this?
 
     char NAND_path[100];
     snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, block_number);
@@ -111,23 +111,23 @@ static int nand_erase(int block_number) {
             return -EINVAL;
         }
         WTF is this?
-    */ 
+    */
 
     return 1;
 }
 
 static unsigned int get_next_PCA() {
-    /* TODO: seq A, need to change to seq B */ 
+    /* TODO: seq A, need to change to seq B */
     // [v] Done
     // [] Test
-	
+
     if (current_PCA.value == PCA_INVALID) {
         // init
         current_PCA.value = 0;
 
         return current_PCA.value;
     }
-    
+
     if (current_PCA.value == PCA_FULL) {
         // ssd is full, no pca can be allocated
         printf("No new PCA\n");
@@ -154,11 +154,11 @@ static unsigned int get_next_PCA() {
     if (PCA_PAGE_IS_FULL) {
         current_PCA.info.block_number++;
         current_PCA.info.page_number = 0;
-    } 
-    else current_PCA.info.page_number++;
+    } else
+        current_PCA.info.page_number++;
 
     printf("PCA = page %d, nand %d\n", current_PCA.info.page_number, current_PCA.info.block_number);
-    
+
     return current_PCA.value;
 }
 
@@ -172,7 +172,7 @@ static int ftl_read(char* buf, size_t logical_block_address) {
 
     if (PCA.value == PCA_INVALID) return -EINVAL;
 
-    return nand_read(buf, PCA);
+    return nand_read(buf, PCA.value);
 }
 
 static int ftl_write(const char* buf, size_t logic_block_address_range, size_t logical_block_address) {
@@ -215,7 +215,8 @@ static int ssd_getattr(const char* file_path, struct stat* stbuf, struct fuse_fi
             stbuf->st_size = logic_size;
             break;
 
-        case SSD_NONE: return -ENOENT;
+        case SSD_NONE:
+            return -ENOENT;
     }
 
     return 0;
@@ -242,7 +243,7 @@ static int ssd_do_read(char* buf, size_t size, off_t offset) {
     if (size > logic_size - offset) size = logic_size - offset;
 
     logical_block_address_temp = offset / 512;
-	logical_block_address_temp_range = (offset + size - 1) / 512 - (logical_block_address_temp) + 1;
+    logical_block_address_temp_range = (offset + size - 1) / 512 - (logical_block_address_temp) + 1;
 
     buf_temp = calloc(logical_block_address_temp_range * 512, sizeof(char));
 
@@ -266,7 +267,7 @@ static int ssd_read(const char* file_path, char* buf, size_t size, off_t offset,
 
 static int ssd_do_write(const char* buf, size_t size, off_t offset) {
     /* TODO: only basic write case, need to consider other cases */
-	
+
     int logical_block_address_temp = offset / 512;
     int logical_block_address_range_temp = (offset + size - 1) / 512 - (logical_block_address_temp) + 1;
     int process_size = 0, current_size = 0, remain_size = size;
@@ -283,14 +284,14 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset) {
             // write full return -enomem;
             if (result == 0) return -ENOMEM;
             // error
-            else if (result < 0) return result;
+            else if (result < 0)
+                return result;
 
             current_size += 512;
             remain_size -= 512;
             process_size += 512;
             offset += 512;
-        }
-        else {
+        } else {
             printf(" --> Not align 512 !!!");
             return -EINVAL;
         }
@@ -330,7 +331,6 @@ static int ssd_readdir(const char* file_path, void* buf, fuse_fill_dir_t filler,
 }
 
 static int ssd_ioctl(const char* file_path, unsigned int cmd, void* arg, struct fuse_file_info* fi, unsigned int flags, void* data) {
-
     if (ssd_file_type(file_path) != SSD_FILE) return -EINVAL;
     if (flags & FUSE_IOCTL_COMPAT) return -ENOSYS;
 
@@ -368,8 +368,8 @@ int main(int argc, char* argv[]) {
 
     physic_size = 0;
     logic_size = 0;
-	nand_write_size = 0;
-	host_write_size = 0;
+    nand_write_size = 0;
+    host_write_size = 0;
 
     current_PCA.value = PCA_INVALID;
 
