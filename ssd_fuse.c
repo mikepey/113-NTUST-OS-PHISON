@@ -250,7 +250,7 @@ static int ssd_do_read(char* buf, size_t size, off_t offset) {
         if (result < 0) {
             free(buf_temp);
             return result;
-        } else if (result == 0) {
+        } else if (result == 0) {  // empty data
             memset(buf_temp + i * 512, 0, 512);
         }
     }
