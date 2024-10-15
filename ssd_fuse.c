@@ -42,43 +42,43 @@ static int ssd_expand(size_t new_size) {
     return 0;
 }
 
-static int nand_read(char* buf, int read_pca) {
+static int nand_read(char* buf, int read_PCA) {
     FILE* fptr;
 
-    PCA pca;
-    pca.value = read_pca;
+    PCA PCA;
+    PCA.value = read_PCA;
 
     char NAND_path[100] = {};
-    snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, pca.info.block_number);
+    snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, PCA.info.block_number);
 
     if (!(fptr = fopen(NAND_path, "r"))) {
-        printf("open file fail at nand read pca = %d\n", read_pca);
+        printf("open file fail at nand read pca = %d\n", read_PCA);
         return -EINVAL;
     }
 
-    fseek(fptr, pca.info.page_number * 512, SEEK_SET);
+    fseek(fptr, PCA.info.page_number * 512, SEEK_SET);
     fread(buf, 1, 512, fptr);
     fclose(fptr);
 
     return 512;
 }
 
-static int nand_write(const char* buf, int write_pca) {
+static int nand_write(const char* buf, int write_PCA) {
     FILE* fptr;
 
-    PCA pca;
-    pca.value = write_pca;
+    PCA PCA;
+    PCA.value = write_PCA;
 
     char NAND_path[100];
-    snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, pca.info.block_number);
+    snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, PCA.info.block_number);
 
     // write to nand
     if (!(fptr = fopen(NAND_path, "r+"))) {
-        printf("open file fail at nand (%s) write pca = %d, return %d\n", NAND_path, write_pca, -EINVAL);
+        printf("open file fail at nand (%s) write pca = %d, return %d\n", NAND_path, write_PCA, -EINVAL);
         return -EINVAL;
     }
 
-    fseek(fptr, pca.info.page_number * 512, SEEK_SET );
+    fseek(fptr, PCA.info.page_number * 512, SEEK_SET );
     fwrite(buf, 1, 512, fptr);
     fclose(fptr);
 
@@ -116,7 +116,7 @@ static int nand_erase(int block_number) {
     return 1;
 }
 
-static unsigned int get_next_pca() {
+static unsigned int get_next_PCA() {
     /* TODO: seq A, need to change to seq B */ 
     // [v] Done
     // [] Test
@@ -125,7 +125,7 @@ static unsigned int get_next_pca() {
         // init
         current_PCA.value = 0;
 
-        return curr_pca.pca;
+        return current_PCA.value;
     }
     
     if (current_PCA.value == PCA_FULL) {
@@ -167,21 +167,21 @@ static int ftl_read(char* buf, size_t logical_block_address) {
     // [v] Done
     // []  Test
 
-    PCA pca;
-    pca.value = L2P_address_table[logical_block_address];
+    PCA PCA;
+    PCA.value = L2P_address_table[logical_block_address];
 
-    if (pca.value == PCA_INVALID) return -EINVAL;
+    if (PCA.value == PCA_INVALID) return -EINVAL;
 
-    return nand_read(buf, pca);
+    return nand_read(buf, PCA);
 }
 
 static int ftl_write(const char* buf, size_t logic_block_address_range, size_t logical_block_address) {
     /* TODO: only basic write case, need to consider other cases */
-    PCA pca;
-    pca.value = get_next_pca();
+    PCA PCA;
+    PCA.value = get_next_PCA();
 
-    if (nand_write(buf, pca.pca)) {
-        L2P_address_table[logical_block_address] = pca.value;
+    if (nand_write(buf, PCA.value)) {
+        L2P_address_table[logical_block_address] = PCA.value;
         return 512;
     }
 
@@ -221,10 +221,10 @@ static int ssd_getattr(const char* file_path, struct stat* stbuf, struct fuse_fi
     return 0;
 }
 
-static int ssd_open(const char* path, struct fuse_file_info* fi) {
+static int ssd_open(const char* file_path, struct fuse_file_info* fi) {
     (void)fi;
 
-    if (ssd_file_type(path) != SSD_NONE) return 0;
+    if (ssd_file_type(file_path) != SSD_NONE) return 0;
 
     return -ENOENT;
 }
@@ -299,28 +299,28 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset) {
     return size;
 }
 
-static int ssd_write(const char* path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fi) {
+static int ssd_write(const char* file_path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fi) {
     (void)fi;
 
-    if (ssd_file_type(path) != SSD_FILE) return -EINVAL;
+    if (ssd_file_type(file_path) != SSD_FILE) return -EINVAL;
 
     return ssd_do_write(buf, size, offset);
 }
 
-static int ssd_truncate(const char* path, off_t size, struct fuse_file_info* fi) {
+static int ssd_truncate(const char* file_path, off_t size, struct fuse_file_info* fi) {
     (void)fi;
 
-    if (ssd_file_type(path) != SSD_FILE) return -EINVAL;
+    if (ssd_file_type(file_path) != SSD_FILE) return -EINVAL;
 
     return ssd_resize(size);
 }
 
-static int ssd_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags) {
+static int ssd_readdir(const char* file_path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags) {
     (void)fi;
     (void)offset;
     (void)flags;
 
-    if (ssd_file_type(path) != SSD_ROOT) return -ENOENT;
+    if (ssd_file_type(file_path) != SSD_ROOT) return -ENOENT;
 
     filler(buf, ".", NULL, 0, 0);
     filler(buf, "..", NULL, 0, 0);
@@ -329,9 +329,9 @@ static int ssd_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_
     return 0;
 }
 
-static int ssd_ioctl(const char* path, unsigned int cmd, void* arg, struct fuse_file_info* fi, unsigned int flags, void* data) {
+static int ssd_ioctl(const char* file_path, unsigned int cmd, void* arg, struct fuse_file_info* fi, unsigned int flags, void* data) {
 
-    if (ssd_file_type(path) != SSD_FILE) return -EINVAL;
+    if (ssd_file_type(file_path) != SSD_FILE) return -EINVAL;
     if (flags & FUSE_IOCTL_COMPAT) return -ENOSYS;
 
     switch (cmd) {
@@ -377,7 +377,7 @@ int main(int argc, char* argv[]) {
     memset(L2P_address_table, PCA_INVALID, NAND_LOGICAL_COUNT * NAND_PAGE_COUNT * sizeof(int));
 
     for (int i = 0; i < NAND_PHYSICAL_COUNT; i++) {
-        snprintf(nand_name, 100, "%s/nand_%d", NAND_LOCATION, i);
+        snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, i);
 
         FILE* fptr = fopen(NAND_path, "w");
         if (fptr == NULL) printf("open fail");
