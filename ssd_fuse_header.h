@@ -18,7 +18,8 @@
 #define NAND_PHYSICAL_COUNT (8)
 
 /* 擴展宏 */
-#define NAND_PAGE_COUNT (NAND_SIZE * 1024 / 512)
+#define NAND_BYTE_SIZE (NAND_SIZE * 1024)
+#define NAND_PAGE_COUNT (NAND_SIZE * 1024 / 512) // 20
 
 enum PCA_STATEMENT {
     PCA_FULL = 0xFFFFFFFE, // 4294967294 (unsigned int的最大值 - 1)
@@ -40,8 +41,8 @@ enum SSD_FILE_PATH_TYPE {
 typedef union PCA {
     unsigned int value;
 
-    struct {
-        unsigned int page_count : 16;
-        unsigned int block_count : 16;
+    struct PCA_INFO {
+        unsigned int page_number : 16;
+        unsigned int block_number : 16;
     } info;
 } PCA;
