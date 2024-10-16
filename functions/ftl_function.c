@@ -52,7 +52,7 @@ static int ftl_read(char* buf, size_t logical_block_address) {
     // []  Test
 
     PCA PCA;
-    PCA.value = L2P_address_table[logical_block_address];
+    PCA.value = L2P_table[logical_block_address];
 
     if (PCA.value == PCA_INVALID) return -EINVAL;
 
@@ -65,7 +65,7 @@ static int ftl_write(const char* buf, size_t logic_block_address_range, size_t l
     PCA.value = get_next_PCA();
 
     if (nand_write(buf, PCA.value)) {
-        L2P_address_table[logical_block_address] = PCA.value;
+        L2P_table[logical_block_address] = PCA.value;
         return 512;
     }
 
