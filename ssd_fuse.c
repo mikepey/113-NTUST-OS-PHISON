@@ -24,8 +24,8 @@ int main(int argc, char* argv[]) {
 
     current_PCA.value = PCA_INVALID;
 
-    L2P_address_table = malloc(NAND_LOGICAL_COUNT * NAND_PAGE_COUNT * sizeof(int));
-    memset(L2P_address_table, PCA_INVALID, NAND_LOGICAL_COUNT * NAND_PAGE_COUNT * sizeof(int));
+    L2P_table = malloc(NAND_LOGICAL_COUNT * NAND_PAGE_COUNT * sizeof(int));
+    memset(L2P_table, PCA_INVALID, NAND_LOGICAL_COUNT * NAND_PAGE_COUNT * sizeof(int));
 
     for (int i = 0; i < NAND_PHYSICAL_COUNT; i++) {
         snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, i);
