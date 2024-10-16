@@ -1,6 +1,6 @@
 #include <sys/ioctl.h>
 
-#include "ssd_function.h"
+#include "../functions/ssd_function.h"
 
 #define S_IFDIR 0040000
 #define S_IFREG 0100000

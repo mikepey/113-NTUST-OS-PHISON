@@ -8,11 +8,11 @@
 
 #define FUSE_USE_VERSION 35
 
-#include "ftl_function.h"
-#include "ssd_operation.h"
+#include "functions/ftl_function.h"
+#include "interfaces/ssd_operation.h"
 
-#include "PCA.h"
-#include "SSD.h"
+#include "definitions/PCA.h"
+#include "definitions/SSD.h"
 
 int main(int argc, char* argv[]) {
     char NAND_path[100];

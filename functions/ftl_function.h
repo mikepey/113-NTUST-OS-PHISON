@@ -1,7 +1,8 @@
 #include <stdbool.h>
 
 #include "nand_function.h"
-#include "PCA.h"
+
+#include "../definitions/PCA.h"
 
 unsigned int* L2P_table;
 unsigned int* valid_table;
