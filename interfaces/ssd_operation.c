@@ -1,12 +1,22 @@
 #include "ssd_operation.h"
 
-static int ssd_file_type(const char* ssd_file_path) {
+const struct fuse_operations ssd_operations = {
+    .ioctl = ssd_operation_ioctl,
+    .getattr = ssd_operation_getattr,
+    .readdir = ssd_operation_readdir,
+    .truncate = ssd_operation_truncate,
+    .open = ssd_operation_open,
+    .read = ssd_operation_read,
+    .write = ssd_operation_write,
+};
+
+int ssd_file_type(const char* ssd_file_path) {
     if (strcmp(ssd_file_path, "/") == 0) return SSD_ROOT;
     if (strcmp(ssd_file_path, "/" SSD_FILE_NAME) == 0) return SSD_FILE;
     return SSD_NONE;
 }
 
-static int ssd_operation_ioctl(const char* ssd_file_path, unsigned int command, void* arg, struct fuse_file_info* fuse_file_info, unsigned int flags, void* data) {
+int ssd_operation_ioctl(const char* ssd_file_path, unsigned int command, void* arg, struct fuse_file_info* fuse_file_info, unsigned int flags, void* data) {
     if (ssd_file_type(ssd_file_path) != SSD_FILE) return -EINVAL;
     if (flags & FUSE_IOCTL_COMPAT) return -ENOSYS;
 
@@ -29,7 +39,7 @@ static int ssd_operation_ioctl(const char* ssd_file_path, unsigned int command, 
     return -EINVAL;
 }
 
-static int ssd_operation_getattr(const char* ssd_file_path, struct stat* stbuf, struct fuse_file_info* fuse_file_info) {
+int ssd_operation_getattr(const char* ssd_file_path, struct stat* stbuf, struct fuse_file_info* fuse_file_info) {
     (void)fuse_file_info;
 
     stbuf->st_uid = getuid();
@@ -55,7 +65,7 @@ static int ssd_operation_getattr(const char* ssd_file_path, struct stat* stbuf, 
     return 0;
 }
 
-static int ssd_operation_readdir(const char* ssd_file_path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fuse_file_info, enum fuse_readdir_flags flags) {
+int ssd_operation_readdir(const char* ssd_file_path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fuse_file_info, enum fuse_readdir_flags flags) {
     (void)fuse_file_info;
     (void)offset;
     (void)flags;
@@ -69,7 +79,7 @@ static int ssd_operation_readdir(const char* ssd_file_path, void* buf, fuse_fill
     return 0;
 }
 
-static int ssd_operation_truncate(const char* ssd_file_path, off_t size, struct fuse_file_info* fuse_file_info) {
+int ssd_operation_truncate(const char* ssd_file_path, off_t size, struct fuse_file_info* fuse_file_info) {
     (void)fuse_file_info;
 
     if (ssd_file_type(ssd_file_path) != SSD_FILE) return -EINVAL;
@@ -77,7 +87,7 @@ static int ssd_operation_truncate(const char* ssd_file_path, off_t size, struct 
     return ssd_resize(size);
 }
 
-static int ssd_operation_open(const char* ssd_file_path, struct fuse_file_info* fuse_file_info) {
+int ssd_operation_open(const char* ssd_file_path, struct fuse_file_info* fuse_file_info) {
     (void)fuse_file_info;
 
     if (ssd_file_type(ssd_file_path) != SSD_NONE) return 0;
@@ -85,18 +95,20 @@ static int ssd_operation_open(const char* ssd_file_path, struct fuse_file_info* 
     return -ENOENT;
 }
 
-static int ssd_operation_read(const char* ssd_file_path, char* buf, size_t size, off_t offset, struct fuse_file_info* fuse_file_info) {
+int ssd_operation_read(const char* ssd_file_path, char* buf, size_t size, off_t offset, struct fuse_file_info* fuse_file_info) {
     (void)fuse_file_info;
 
     if (ssd_file_type(ssd_file_path) != SSD_FILE) return -EINVAL;
 
-    return ssd_do_read(buf, size, offset);
+    printf("ssd_operation_read size: %d, offset: %d\n", size, offset);
+
+    return ssd_read(buf, size, offset);
 }
 
-static int ssd_operation_write(const char* ssd_file_path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fuse_file_info) {
+int ssd_operation_write(const char* ssd_file_path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fuse_file_info) {
     (void)fuse_file_info;
 
     if (ssd_file_type(ssd_file_path) != SSD_FILE) return -EINVAL;
 
-    return ssd_do_write(buf, size, offset);
+    return ssd_write(buf, size, offset);
 }

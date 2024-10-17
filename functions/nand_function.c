@@ -1,10 +1,13 @@
 #include "nand_function.h"
 
-static int nand_read(char* buf, PCA_TYPE read_PCA) {    
+int nand_read(char* buf, PCA_TYPE read_PCA) {    
     FILE* fptr;
 
     PCA PCA;
     PCA.value = read_PCA;
+
+    printf("nand_read PCA value: %d\n", PCA.value);
+    printf("nand_read PCA block: %d, page: %d\n", PCA.info.block_number, PCA.info.page_number);
 
     char NAND_path[100] = {};
     snprintf(NAND_path, 100, "%s/nand_%d", NAND_LOCATION, PCA.info.block_number);
@@ -14,14 +17,18 @@ static int nand_read(char* buf, PCA_TYPE read_PCA) {
         return -EINVAL;
     }
 
+    printf("nand_read path: %s\n", NAND_path);
+
     fseek(fptr, PCA.info.page_number * 512, SEEK_SET);
-    fread(buf, 1, 512, fptr);
+    printf("fread: %lu\n", fread(buf, 1, 512, fptr));
+
+    printf("buf: %s\n", buf);
     fclose(fptr);
 
     return 512;
 }
 
-static int nand_write(const char* buf, PCA_TYPE write_PCA) {
+int nand_write(const char* buf, PCA_TYPE write_PCA) {
     FILE* fptr;
 
     PCA PCA;
@@ -36,8 +43,14 @@ static int nand_write(const char* buf, PCA_TYPE write_PCA) {
         return -EINVAL;
     }
 
+    printf("write buf: %s\n", buf);
+    printf("write nand path: %s\n", NAND_path);
+
+    printf("write PCA value: %d\n", PCA.value);
+    printf("write PCA block: %d, page: %d\n", PCA.info.block_number, PCA.info.page_number);
+
     fseek(fptr, PCA.info.page_number * 512, SEEK_SET);
-    fwrite(buf, 1, 512, fptr);
+    printf("fwrite: %lu\n", fwrite(buf, 1, 512, fptr));
     fclose(fptr);
 
     ssd_size.physic++;
@@ -46,7 +59,7 @@ static int nand_write(const char* buf, PCA_TYPE write_PCA) {
     return 512;
 }
 
-static int nand_erase(int block_number) {
+int nand_erase(int block_number) {
     FILE* fptr;
     // int found = 0; WTF is this?
 

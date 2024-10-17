@@ -1,4 +1,8 @@
-#define PCA_TYPE int 
+#ifndef PCA_H
+#define PCA_H
+
+#define PCA_TYPE unsigned int 
+#define L2P_EMPTY_PCA 0xFFFFFFFF
 
 typedef union PCA {
     unsigned int value;
@@ -9,9 +13,12 @@ typedef union PCA {
     } info;
 } PCA;
 
-enum PCA_STATEMENT {
-    PCA_FULL = 0xFFFFFFFE, // 4294967294 (unsigned int的最大值 - 1)
-    PCA_INVALID = 0xFFFFFFFF, // 4294967295 (unsigned int的最大值)
-};
+typedef enum PCA_STATEMENT {
+    PCA_EMPTY,
+    PCA_DISABLE,
+    PCA_HAVE_DATA,
+} PCA_STATEMENT;
 
-PCA current_PCA;
+extern PCA current_PCA;
+
+#endif // PCA_H

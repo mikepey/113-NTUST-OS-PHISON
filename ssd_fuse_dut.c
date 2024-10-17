@@ -14,8 +14,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
-#include "ssd_fuse_header.h"
 #include <time.h>
+
+#include "definitions/SSD.h"
 
 const char* usage =
     "Usage: ssd_fuse SSD_FILE COMMAND\n"
