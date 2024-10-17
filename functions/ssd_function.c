@@ -122,9 +122,6 @@ int ssd_write(const char* buf, size_t size, off_t offset) {
             continue;
         }
 
-        printf("for 3: current_size: %d, remain_size: %d, process_size: %d, offset: %d\n", current_size, remain_size, process_size, offset);
-
-        printf("for 3-1\n");
         if (remain_size >= 512) {
             memset(write_buf, 0, 512);
             memcpy(write_buf, buf + process_size, 512);
