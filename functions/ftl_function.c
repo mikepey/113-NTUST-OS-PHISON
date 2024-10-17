@@ -22,8 +22,6 @@ unsigned int get_next_PCA() {
             printf("--> GC FAIL!!!");
             print_ssd();
 
-            printf("current PCA block: %d, page: %d\n", current_PCA.info.block_number, current_PCA.info.page_number);
-
             abort();
         }
 
@@ -38,14 +36,10 @@ unsigned int get_next_PCA() {
         current_PCA.info.page_number++;
     }
 
-    printf("NEXT PCA = page %d, nand %d\n", current_PCA.info.page_number, current_PCA.info.block_number);
-
     return current_PCA.value;
 }
 
 unsigned int get_min_valid_PCA(unsigned int* valid_PCA_count) {
-    printf("in get_min_valid_PCA...\n");
-
     PCA PCA;
 
     unsigned int block_number_result = 0, min_valid_PCA_count = 512;
@@ -66,15 +60,11 @@ unsigned int get_min_valid_PCA(unsigned int* valid_PCA_count) {
         }
     }
 
-    printf("block_number_result: %d\n", block_number_result);
-
     *valid_PCA_count = min_valid_PCA_count;
     return block_number_result;
 }
 
 unsigned int get_max_empty_PCA(unsigned int* empty_PCA_count) {
-    printf("in get_max_empty_PCA...\n");
-
     PCA PCA;  
     unsigned int block_number_result = 0, max_empty_PCA_count = 0;
 
@@ -94,15 +84,11 @@ unsigned int get_max_empty_PCA(unsigned int* empty_PCA_count) {
         }
     }
 
-    printf("block_number_result: %d\n", block_number_result);
-
     *empty_PCA_count = max_empty_PCA_count;
     return block_number_result;
 }
 
 bool is_disable_block(unsigned int block_number) { 
-    printf("jump to is_disable_block\n");
-
     PCA PCA;  
     PCA.info.block_number = block_number;
 
@@ -120,8 +106,6 @@ int ftl_read(char* buf, size_t logical_block_address) {
     // [v] Done
     // [v]  Test
 
-    printf("jump to ftl_read\n");
-
     PCA PCA;
     PCA.value = L2P_table[logical_block_address];
 
@@ -135,8 +119,6 @@ int ftl_write(const char* buf, size_t logical_block_address) {
     /* TODO: only basic write case, need to consider other cases */
     // [v] Done
     // [v] Test
-
-    printf("jump to ftl_write\n");
 
     PCA PCA;
     PCA.value = L2P_table[logical_block_address];
@@ -170,41 +152,28 @@ int ftl_write(const char* buf, size_t logical_block_address) {
         return 512;
     }
 
-    printf(" --> Write fail !!!");
-
     return -EINVAL;
 }
 
 int ftl_garbage_collection() {
-    printf("staring GC...\n");
-
     size_t success_collect_size = 0;
 
     unsigned int valid_PCA_count, empty_PCA_count;
     unsigned int min_valid_PCA_block_number = get_min_valid_PCA(&valid_PCA_count), max_empty_PCA_block_number = get_max_empty_PCA(&empty_PCA_count);
 
-    printf("min_valid_PCA_block_number: %d, max_empty_PCA_block_number: %d\n", min_valid_PCA_block_number, max_empty_PCA_block_number);
-    printf("valid_PCA_count: %d, empty_PCA_count: %d\n", valid_PCA_count, empty_PCA_count);
-
     for (int i = 0; i < NAND_PHYSICAL_COUNT; i++) {
         if (!is_disable_block(i)) continue;
-        
-        printf("erase disable block: %d\n", i);
+
         ftl_erase(i);
 
         success_collect_size += 512;
     }
     
     if (min_valid_PCA_block_number != max_empty_PCA_block_number && valid_PCA_count <= empty_PCA_count) success_collect_size += ftl_merge(min_valid_PCA_block_number, max_empty_PCA_block_number, valid_PCA_count);
-
-    printf("success_collect_size: %d\n", success_collect_size);
     return success_collect_size;
 }
 
 int ftl_merge(unsigned int from_block_number, unsigned int to_block_number, unsigned int valid_PCA_count) {
-    printf("mergeing...\n");
-    printf("from_block_number: %d, to_block_number: %d\n", from_block_number, to_block_number);
-
     PCA from_PCA, to_PCA;
     int success_merge_size = 0;
 
@@ -227,15 +196,11 @@ int ftl_merge(unsigned int from_block_number, unsigned int to_block_number, unsi
             if (PCA.value == from_PCA.value) L2P_table[i] = to_PCA.value;
         }
 
-        printf("start mergeing! from block %d, page %d to block %d page %d!", from_PCA.info.block_number, from_PCA.info.page_number, to_PCA.info.block_number, to_PCA.info.page_number);
-
         nand_read(buf_temp, from_PCA.value);
         PCA_statement_table[NAND_PAGE_COUNT * from_PCA.info.block_number + from_PCA.info.page_number] = PCA_DISABLE;
 
         nand_write(buf_temp, to_PCA.value);
         PCA_statement_table[NAND_PAGE_COUNT * to_PCA.info.block_number + to_PCA.info.page_number] = PCA_HAVE_DATA;
-
-        printf("from PCA statement %d, to PCA statement %d", get_PCA_statement(&from_PCA), get_PCA_statement(&to_PCA));
 
         valid_PCA_count--;
         success_merge_size++;
@@ -247,23 +212,12 @@ int ftl_merge(unsigned int from_block_number, unsigned int to_block_number, unsi
 }
 
 void ftl_erase(unsigned int block_number) {
-    printf("erase...\n");
-
     nand_erase(block_number);
-
-    printf("block_number: %d\n", block_number);
 
     for (int i = 0; i < NAND_PAGE_COUNT; i++) {
         PCA_statement_table[NAND_PAGE_COUNT * block_number + i] = PCA_EMPTY;
     }
 
-    printf("set empty done\n");
-
-    print_ssd();
-
-
     current_PCA.info.block_number = block_number;
     current_PCA.info.page_number = 0;
-
-    printf("after erase, current PCA block: %d, page: %d\n", current_PCA.info.block_number, current_PCA.info.page_number);
 }
